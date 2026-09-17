@@ -431,12 +431,14 @@ function getSlideSrc(slideNumber) {
     return getSlideSrc(30);
   }
 
-  if (photoCleanSlideNumbers.has(slideNumber)) {
+  const isEditedSlide = editedSlideNumbers.has(slideNumber);
+  if (photoCleanSlideNumbers.has(slideNumber) && !isEditedSlide) {
     return `slides/photo-clean/スライド${slideNumber}.PNG?v=marker-clean-20260807`;
   }
 
-  const folder = editedSlideNumbers.has(slideNumber) ? 'slides/edited' : 'slides';
-  return `${folder}/スライド${slideNumber}.PNG`;
+  const folder = isEditedSlide ? 'slides/edited' : 'slides';
+  const cacheVersion = isEditedSlide ? '?v=condition2-text-quality-update-20260917' : '';
+  return `${folder}/スライド${slideNumber}.PNG${cacheVersion}`;
 }
 
 function updateOverlayMetrics() {
