@@ -362,7 +362,16 @@ const qualityRegions = {
 
 const slideTextMasks = {
   1: [{ left: 9.3, top: 15.0, width: 66.5, height: 5.4 }],
-  8: [{ left: 19.5, top: 89.0, width: 69.5, height: 5.0, className: 'slide-small-instruction', text: '内容を理解したら、次ページに進んでください。' }],
+  8: [
+    {
+      left: 452 / 1280 * 100, top: 184 / 720 * 100, width: 650 / 1280 * 100, height: 382 / 720 * 100,
+      className: 'slide-comment-no-highlight',
+      html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 650 382">
+        <text><tspan x="0" y="32">居間でテレビを見ていたら、突然、テ</tspan><tspan x="0" y="77">レビとスマホから緊急地震速報が流れ</tspan><tspan x="0" y="122">てきました。</tspan><tspan x="0" y="188">どうしたらよいか分からないまま</tspan><tspan x="0" y="233">何もできず、大きな揺れが来るのを</tspan><tspan x="0" y="278">待つだけでした。</tspan><tspan x="0" y="323">緊急地震速報は役に立たないと実感</tspan><tspan x="0" y="368">しました。</tspan></text>
+      </svg>`
+    },
+    { left: 19.5, top: 89.0, width: 69.5, height: 5.0, className: 'slide-small-instruction', text: '内容を理解したら、次ページに進んでください。' }
+  ],
   12: [
     { left: 9.0, top: 22.8, width: 75.0, height: 75.8, className: 'slide-text-mask' },
     { left: 84.0, top: 22.8, width: 7.8, height: 60.4, className: 'slide-text-mask' },
@@ -1137,6 +1146,32 @@ function renderScaleControls() {
   });
 }
 
+function renderImageNavigationHover(slideNumber) {
+  const isArrow = [1, 7, 8, 12].includes(slideNumber);
+  if (!isArrow && slideNumber !== 13) {
+    return;
+  }
+
+  // Display-only overlays; clicks still use the existing slide-area handler.
+  const region = isArrow
+    ? { left: 1130 / 1280 * 100, top: 600 / 720 * 100, width: 85 / 1280 * 100, height: 56 / 720 * 100 }
+    : { left: 1083 / 1280 * 100, top: 644 / 720 * 100, width: 155 / 1280 * 100, height: 50 / 720 * 100 };
+  const overlay = document.createElement('div');
+  overlay.className = isArrow ? 'image-next-arrow-hover' : 'image-confirm-hover';
+  overlay.setAttribute('aria-hidden', 'true');
+  overlay.style.left = `${region.left}%`;
+  overlay.style.top = `${region.top}%`;
+  overlay.style.width = `${region.width}%`;
+  overlay.style.height = `${region.height}%`;
+  if (isArrow) {
+    overlay.style.backgroundImage = `url("${slideImage.currentSrc || slideImage.src}")`;
+    overlay.style.backgroundSize = `${10000 / region.width}% ${10000 / region.height}%`;
+    overlay.style.backgroundPosition = `${region.left / (100 - region.width) * 100}% ${region.top / (100 - region.height) * 100}%`;
+  }
+  qualityOverlay.append(overlay);
+  qualityOverlay.classList.remove('hidden');
+}
+
 function renderSlideLayers(slideNumber) {
   counter.textContent = `${currentIndex + 1} / ${slideFiles.length}`;
   progressBar.style.width = `${((currentIndex + 1) / slideFiles.length) * 100}%`;
@@ -1148,6 +1183,7 @@ function renderSlideLayers(slideNumber) {
   renderQuestionPage();
   renderPhotoFrameEditor();
   renderSlideTextMasks();
+  renderImageNavigationHover(slideNumber);
   scaleTableOverlay.replaceChildren();
   scaleTableOverlay.classList.add('hidden');
   renderScaleControls();
@@ -1237,8 +1273,21 @@ function isForwardButtonPoint(event) {
     return false;
   }
 
-  return x >= 0.82 && x <= 0.99 && y >= 0.80 && y <= 0.99;
+  return x >= 0.875 && x <= 0.96 && y >= 0.82 && y <= 0.925;
 }
+
+slideArea.addEventListener('mousemove', (event) => {
+  slideArea.classList.toggle('forward-button-hover', isForwardButtonPoint(event));
+  const confirmOverlay = qualityOverlay.querySelector('.image-confirm-hover');
+  const rect = confirmOverlay?.getBoundingClientRect();
+  slideArea.classList.toggle('confirm-button-hover', Boolean(rect
+    && event.clientX >= rect.left && event.clientX <= rect.right
+    && event.clientY >= rect.top && event.clientY <= rect.bottom));
+});
+
+slideArea.addEventListener('mouseleave', () => {
+  slideArea.classList.remove('forward-button-hover', 'confirm-button-hover');
+});
 
 slideArea.addEventListener('click', (event) => {
   const target = event.target;
